@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Terminal d'analyse</title>
+  <style>
+    body {
+      background: #000;
+      color: #00ff00;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 1.1rem;
+      padding: 20px;
+      white-space: pre-line;
+    }
+    #terminal {
+      max-width: 90%;
+    }
+    .cursor {
+      display: inline-block;
+      width: 10px;
+      background-color: #00ff00;
+      animation: blink 0.8s infinite;
+    }
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div id="terminal"></div>
+  <script>
+    const terminal = document.getElementById("terminal");
+    const cursor = "<span class='cursor'> </span>";
+    let lineDelay = 400;
+
+    function typeLine(text, delay = lineDelay) {
+      return new Promise((resolve) => {
+        let i = 0;
+        const interval = setInterval(() => {
+          if (i < text.length) {
+            terminal.innerHTML += text.charAt(i++);
+          } else {
+            clearInterval(interval);
+            terminal.innerHTML += "\n";
+            resolve();
+          }
+        }, 20);
+      });
+    }
+
+    async function runTerminal() {
+      await typeLine("[Système] Connexion entrante détectée...");
+      await typeLine("[OK] Analyse de l'utilisateur en cours...");
+      await typeLine("Récupération des métadonnées...");
+      await typeLine("Adresse IP : en cours...");
+      
+      // Get IP info
+      const res = await fetch("https://api.ipify.org?format=json");
+      const data = await res.json();
+      await typeLine(`Adresse IP : ${data.ip}`);
+
+      const ua = navigator.userAgent;
+      const platform = navigator.platform;
+      const language = navigator.language;
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+      await typeLine(`Appareil : ${/Mobi|Android/i.test(ua) ? "Mobile" : "Ordinateur"}`);
+      await typeLine(`Navigateur : ${ua}`);
+      await typeLine(`Système d'exploitation : ${platform}`);
+      await typeLine(`Langue : ${language}`);
+      await typeLine(`Fuseau horaire : ${timezone}`);
+      await typeLine("[✓] Profil complété.");
+      await typeLine("Synchronisation avec serveur distant...");
+      await typeLine("Chargement des modules de traçage...");
+
+      await typeLine(">>> Données transmises avec succès.");
+      await typeLine(">>> Surveillance active engagée.");
+      terminal.innerHTML += cursor;
+    }
+
+    runTerminal();
+  </script>
+</body>
+</html>
