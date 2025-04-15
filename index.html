@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
   <title>Terminal d'analyse</title>
@@ -15,28 +15,30 @@
     #terminal {
       max-width: 90%;
     }
-    .cursor {
-      display: inline-block;
-      width: 10px;
-      background-color: #00ff00;
-      animation: blink 0.8s infinite;
-    }
-    @keyframes blink {
-      0% { opacity: 1; }
-      50% { opacity: 0; }
-      100% { opacity: 1; }
+    #input {
+      background: #000;
+      border: none;
+      border-bottom: 1px solid #00ff00;
+      color: #00ff00;
+      font-family: monospace;
+      font-size: 1.1rem;
+      width: 300px;
+      outline: none;
+      display: none;
     }
   </style>
 </head>
 <body>
   <div id="terminal"></div>
+  <input id="input" placeholder="> Tape une commande" />
+
   <script>
     const terminal = document.getElementById("terminal");
-    const cursor = "<span class='cursor'> </span>";
-    let lineDelay = 400;
+    const input = document.getElementById("input");
+    let userIP = "0.0.0.0";
 
-    function typeLine(text, delay = lineDelay) {
-      return new Promise((resolve) => {
+    const typeLine = (text, speed = 20) => {
+      return new Promise(resolve => {
         let i = 0;
         const interval = setInterval(() => {
           if (i < text.length) {
@@ -46,20 +48,31 @@
             terminal.innerHTML += "\n";
             resolve();
           }
-        }, 20);
+        }, speed);
       });
-    }
+    };
+
+    const fakeIPs = (realIP) => {
+      const getRandomIP = () => {
+        return `${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`;
+      };
+      let list = "";
+      for (let i = 0; i < 6; i++) {
+        list += `Utilisateur #${i + 1} → IP : ${getRandomIP()}\n`;
+      }
+      list += `👁️ Utilisateur #7 → IP : ${realIP} (actuel)\n`;
+      return list;
+    };
 
     async function runTerminal() {
       await typeLine("[Système] Connexion entrante détectée...");
       await typeLine("[OK] Analyse de l'utilisateur en cours...");
       await typeLine("Récupération des métadonnées...");
-      await typeLine("Adresse IP : en cours...");
-      
-      // Get IP info
+
       const res = await fetch("https://api.ipify.org?format=json");
       const data = await res.json();
-      await typeLine(`Adresse IP : ${data.ip}`);
+      userIP = data.ip;
+      await typeLine(`Adresse IP : ${userIP}`);
 
       const ua = navigator.userAgent;
       const platform = navigator.platform;
@@ -72,13 +85,42 @@
       await typeLine(`Langue : ${language}`);
       await typeLine(`Fuseau horaire : ${timezone}`);
       await typeLine("[✓] Profil complété.");
-      await typeLine("Synchronisation avec serveur distant...");
-      await typeLine("Chargement des modules de traçage...");
-
-      await typeLine(">>> Données transmises avec succès.");
-      await typeLine(">>> Surveillance active engagée.");
-      terminal.innerHTML += cursor;
+      await typeLine("\nTape une commande pour continuer...");
+      input.style.display = "block";
+      input.focus();
     }
+
+    input.addEventListener("keydown", async (e) => {
+      if (e.key === "Enter") {
+        const cmd = input.value.trim().toLowerCase();
+        terminal.innerHTML += `\n> ${cmd}\n`;
+        input.value = "";
+
+        if (cmd === "caca") {
+          await typeLine("[Accès Admin] Commande acceptée.");
+          await typeLine("Mot de passe requis...");
+          input.placeholder = "> Tape le mot de passe";
+          input.value = "";
+          input.focus();
+          input.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+              const password = input.value.trim().toLowerCase();
+              if (password === "tacos") {
+                terminal.innerHTML += "\nMot de passe correct. Accès autorisé.";
+                const ipList = fakeIPs(userIP);
+                typeLine(ipList, 10);
+              } else {
+                terminal.innerHTML += "\nMot de passe incorrect. Accès refusé.";
+              }
+              input.value = "";
+              input.placeholder = "> Tape une commande";
+            }
+          });
+        } else {
+          await typeLine("Commande inconnue. Tape 'caca' pour accéder au mode admin.");
+        }
+      }
+    });
 
     runTerminal();
   </script>
